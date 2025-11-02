@@ -18,11 +18,9 @@ class _SplashScreenState extends State<SplashScreen> {
   timerFunc() async {
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => LobbyScreen(title: 'Ho Ho Ho!'),
-        ),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (context) => LobbyScreen()));
     }
   }
 
@@ -34,10 +32,10 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.coffee, size: 80, color: Colors.white),
+            Icon(Icons.diamond_sharp, size: 80, color: Colors.white),
             const SizedBox(height: 24),
             const Text(
-              'Coffee App',
+              'We the best music!',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
