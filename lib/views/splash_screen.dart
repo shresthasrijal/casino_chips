@@ -1,4 +1,4 @@
-import 'package:casino_chips/views/lobby/lobby_screen.dart';
+import 'package:casino_chips/views/lobby/home_screen.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (mounted) {
       Navigator.of(
         context,
-      ).pushReplacement(MaterialPageRoute(builder: (context) => LobbyScreen()));
+      ).pushReplacement(MaterialPageRoute(builder: (context) => HomeScreen()));
     }
   }
 

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-
 import 'package:aurora_background/aurora_background.dart';
 import 'package:aurora_background/star_field.dart';
 
-class LobbyScreen extends StatefulWidget {
-  const LobbyScreen({super.key});
+import 'package:casino_chips/views/lobby/sub_screen/create_lobby.dart';
+import 'package:casino_chips/views/lobby/sub_screen/join_lobby.dart';
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  State<LobbyScreen> createState() => _LobbyScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _LobbyScreenState extends State<LobbyScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   double screenWidth = 0;
   double screenHeight = 0;
   double textScale = 0;
@@ -73,7 +74,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               children: [
                 const SizedBox(height: 20),
                 Text(
-                  'LAN Game Lobby',
+                  'CASINO the LAN Game',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24 * textScale,
@@ -106,6 +107,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     ),
                     onPressed: () {
                       debugPrint('Create Lobby Button Pressed');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CreateLobbyScreen(),
+                        ),
+                      );
                     },
                     child: const Text(
                       'Create Lobby',
@@ -133,6 +140,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       ),
                     ),
                     onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => JoinLobbyScreen()),
+                      );
                       debugPrint('Join Lobby Button Pressed');
                     },
                     child: const Text(
