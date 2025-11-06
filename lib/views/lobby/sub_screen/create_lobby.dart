@@ -63,7 +63,7 @@ class _CreateLobbyScreenState extends State<CreateLobbyScreen> {
     };
     _server.broadcast(gameData);
 
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => GameScreen(

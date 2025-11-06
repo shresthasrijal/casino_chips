@@ -1,3 +1,4 @@
+// views/lobby/sub_screen/join_lobby.dart
 import 'package:casino_chips/services/websocket_client.dart';
 import 'package:casino_chips/views/game_screen.dart';
 import 'package:flutter/material.dart';
@@ -16,33 +17,47 @@ class _JoinLobbyScreenState extends State<JoinLobbyScreen> {
   List<String> _players = [];
   String _status = 'Enter IP & username';
 
+  @override
+  void initState() {
+    super.initState();
+    // Optional: preload last used IP/username from shared prefs later
+  }
+
   void _connect() {
-    // Set up ALL listeners BEFORE connecting
-    _client.onPlayersUpdate = (p) {
+    final ip = _ipController.text.trim();
+    final username = _usernameController.text.trim();
+
+    if (ip.isEmpty || username.isEmpty) {
+      setState(() => _status = 'IP and username cannot be empty');
+      return;
+    }
+
+    // ✅ CRITICAL: Set UP ALL CALLBACKS BEFORE CONNECTING
+    _client.onPlayersUpdate = (players) {
       if (!mounted) return;
       setState(() {
-        _players = p;
-        _status = 'Connected: ${_players.length} players';
+        _players = players;
+        _status = 'Connected: ${players.length} players';
       });
     };
 
-    _client.onGameStart = (data) {
-      // ✅ Set state listeners BEFORE navigation
-      _client.onStateUpdate = (chips, pot, turn) {
-        // This will be used in GameScreen, but we can't update here
-        // So just ensure it's attached early
-      };
-      _client.onChatMessage = (msg) {
-        // Same
-      };
+    _client.onChatMessage = (msg) {
+      // Will be overridden in GameScreen, but prevents message loss during transition
+    };
 
+    _client.onStateUpdate = (chips, pot, turn) {
+      // Same — just ensure handler exists so message isn’t dropped
+    };
+
+    _client.onGameStart = (data) {
       final players = List<String>.from(data['playerOrder']);
       final chips = Map<String, int>.from(data['chips']);
       final pot = data['pot'] as int;
       final turn = data['currentTurn'] as int;
+      final fixedDealer = data['fixedDealer'] as bool;
 
-      // Navigate WITH initial state
-      Navigator.pushReplacement(
+      // Navigate to game WITH full state
+      Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => GameScreen(
@@ -51,7 +66,7 @@ class _JoinLobbyScreenState extends State<JoinLobbyScreen> {
             players: players,
             myUsername: _client.myUsername,
             hostUsername: 'Host',
-            fixedDealer: data['fixedDealer'],
+            fixedDealer: fixedDealer,
             initialChips: chips,
             initialPot: pot,
             initialCurrentTurn: turn,
@@ -60,13 +75,15 @@ class _JoinLobbyScreenState extends State<JoinLobbyScreen> {
       );
     };
 
-    _client.connect(_ipController.text.trim(), _usernameController.text);
-    setState(() => _status = 'Waiting for host...');
+    setState(() => _status = 'Connecting...');
+    _client.connect(ip, username);
   }
 
   @override
   void dispose() {
     _client.disconnect();
+    _ipController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
@@ -83,21 +100,47 @@ class _JoinLobbyScreenState extends State<JoinLobbyScreen> {
               TextField(
                 controller: _usernameController,
                 decoration: const InputDecoration(labelText: 'Username'),
+                maxLines: 1,
               ),
               const SizedBox(height: 20),
               TextField(
                 controller: _ipController,
-                decoration: const InputDecoration(labelText: 'Host IP'),
+                decoration: const InputDecoration(
+                  labelText: 'Host IP (e.g. 192.168.1.105)',
+                ),
+                maxLines: 1,
+                keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 20),
-              ElevatedButton(onPressed: _connect, child: const Text('Join')),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _connect,
+                  child: const Text('Join Lobby'),
+                ),
+              ),
               const SizedBox(height: 20),
-              Text(_status),
+              Text(
+                _status,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
               if (_players.isNotEmpty)
                 Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Players:'),
-                    ..._players.map((p) => Text(p)),
+                    const Text(
+                      'Current Players:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ..._players.map(
+                      (p) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Text('• $p'),
+                      ),
+                    ),
                   ],
                 ),
             ],

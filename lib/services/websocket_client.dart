@@ -1,3 +1,4 @@
+// services/websocket_client.dart
 import 'dart:convert';
 import 'dart:io' show WebSocket;
 import 'package:flutter/foundation.dart';
@@ -18,7 +19,6 @@ class WebSocketClient {
     myUsername = username;
     final uri = Uri.parse('ws://$ip:$port');
 
-    // Ensure we clean up any previous connection
     disconnect();
 
     WebSocket.connect(uri.toString())
@@ -26,7 +26,6 @@ class WebSocketClient {
           _channel = IOWebSocketChannel(webSocket);
           _isConnected = true;
 
-          // Send join message only after connection is ready
           _channel!.sink.add(
             jsonEncode({'type': 'join', 'username': username}),
           );
