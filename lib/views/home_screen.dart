@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:aurora_background/aurora_background.dart';
 import 'package:aurora_background/star_field.dart';
 
-import 'package:casino_chips/views/lobby/sub_screen/create_lobby.dart';
-import 'package:casino_chips/views/lobby/sub_screen/join_lobby.dart';
+import 'package:casino_chips/views/lobby/create_lobby.dart';
+import 'package:casino_chips/views/lobby/join_lobby.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

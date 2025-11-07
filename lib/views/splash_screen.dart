@@ -1,4 +1,4 @@
-import 'package:casino_chips/views/lobby/home_screen.dart';
+import 'package:casino_chips/views/home_screen.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {

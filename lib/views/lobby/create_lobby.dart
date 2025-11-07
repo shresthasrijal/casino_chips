@@ -1,6 +1,6 @@
 import 'package:casino_chips/services/host_server.dart';
 import 'package:casino_chips/utils/network_utils.dart';
-import 'package:casino_chips/views/game_screen.dart';
+import 'package:casino_chips/views/game/game_screen.dart';
 import 'package:flutter/material.dart';
 
 // views/lobby/sub_screen/create_lobby.dart (no host username input, fixed "Host")

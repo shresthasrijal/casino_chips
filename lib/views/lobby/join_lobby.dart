@@ -1,6 +1,6 @@
 // views/lobby/sub_screen/join_lobby.dart
 import 'package:casino_chips/services/websocket_client.dart';
-import 'package:casino_chips/views/game_screen.dart';
+import 'package:casino_chips/views/game/game_screen.dart';
 import 'package:flutter/material.dart';
 
 class JoinLobbyScreen extends StatefulWidget {
