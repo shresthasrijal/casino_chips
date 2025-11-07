@@ -20,7 +20,8 @@ class _JoinLobbyScreenState extends State<JoinLobbyScreen> {
   @override
   void initState() {
     super.initState();
-    // Optional: preload last used IP/username from shared prefs later
+
+    //load last used username with shared pref package later
   }
 
   void _connect() {
@@ -39,14 +40,6 @@ class _JoinLobbyScreenState extends State<JoinLobbyScreen> {
         _players = players;
         _status = 'Connected: ${players.length} players';
       });
-    };
-
-    _client.onChatMessage = (msg) {
-      // Will be overridden in GameScreen, but prevents message loss during transition
-    };
-
-    _client.onStateUpdate = (chips, pot, turn) {
-      // Same — just ensure handler exists so message isn’t dropped
     };
 
     _client.onGameStart = (data) {

@@ -14,6 +14,7 @@ class WebSocketClient {
   Function(String)? onChatMessage;
   Function(Map<String, int>, int, int)? onStateUpdate;
   Function(Map<String, dynamic>)? onGameStart;
+  Function(String)? onGameEnd;
 
   void connect(String ip, String username, {int port = 8080}) {
     myUsername = username;
@@ -47,6 +48,8 @@ class WebSocketClient {
                   final pot = data['pot'] as int;
                   final turn = data['currentTurn'] as int;
                   onStateUpdate?.call(chips, pot, turn);
+                } else if (data['type'] == 'game_end') {
+                  onGameEnd?.call(data['winner']);
                 }
               } catch (e) {
                 debugPrint('Error decoding WebSocket message: $e');

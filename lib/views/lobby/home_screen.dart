@@ -4,6 +4,7 @@ import 'package:aurora_background/star_field.dart';
 
 import 'package:casino_chips/views/lobby/sub_screen/create_lobby.dart';
 import 'package:casino_chips/views/lobby/sub_screen/join_lobby.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -36,10 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text('Lobby'),
-      //   backgroundColor: Colors.blueGrey.shade300,
-      // ),
       body: AuroraBackground(
         numberOfWaves: 5,
         backgroundColors: const [

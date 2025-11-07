@@ -44,26 +44,30 @@ class _GameScreenState extends State<GameScreen> {
 
   final _messages = <String>[];
   final _chatController = TextEditingController();
-  final _betController = TextEditingController();
+  // final _betController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     if (widget.isHost) {
+      widget.hostServer!.onChatMessage = (msg) =>
+          setState(() => _messages.add(msg));
       widget.hostServer!.onCustomMessage = (data, socket) {
         final username = widget.hostServer!.clientUsernames[socket];
         if (username == null || players.indexOf(username) != currentTurn) {
           return;
         }
 
+        String actionText = '';
         if (data['type'] == 'bet') {
           final amount = data['amount'] as int;
           final currentPlayer = players[currentTurn];
           if (amount < 1 || amount > (chips[currentPlayer] ?? 0)) return;
           chips[currentPlayer] = (chips[currentPlayer] ?? 0) - amount;
           pot += amount;
+          actionText = '$username bet $amount';
         } else if (data['type'] == 'check') {
-          // just pass turn
+          actionText = '$username checked';
         }
 
         currentTurn = (currentTurn + 1) % players.length;
@@ -74,6 +78,13 @@ class _GameScreenState extends State<GameScreen> {
           'pot': pot,
           'currentTurn': currentTurn,
         });
+        if (actionText.isNotEmpty) {
+          widget.hostServer!.broadcast({
+            'type': 'chat',
+            'from': 'System',
+            'text': actionText,
+          });
+        }
       };
     } else {
       widget.wsClient!.onChatMessage = (msg) =>
@@ -83,14 +94,16 @@ class _GameScreenState extends State<GameScreen> {
         pot = p;
         currentTurn = t;
       });
+      widget.wsClient!.onGameEnd = (winner) => setState(() {
+        _messages.add('Game ended. Winner: $winner');
+        currentTurn = -1;
+      });
     }
   }
 
-  void _bet() {
-    final amount = int.tryParse(_betController.text) ?? 0;
+  void _betAmount(int amount) {
     final currentPlayer = players[currentTurn];
-    if (amount < 1 || amount > (chips[currentPlayer] ?? 0)) return;
-
+    if (amount > (chips[currentPlayer] ?? 0)) return;
     if (widget.isHost) {
       chips[currentPlayer] = (chips[currentPlayer] ?? 0) - amount;
       pot += amount;
@@ -102,12 +115,38 @@ class _GameScreenState extends State<GameScreen> {
         'pot': pot,
         'currentTurn': currentTurn,
       });
-      _messages.add('You bet $amount');
+      widget.hostServer!.broadcast({
+        'type': 'chat',
+        'from': 'System',
+        'text': '$myUsername bet $amount',
+      });
     } else if (currentPlayer == myUsername) {
       widget.wsClient!.send({'type': 'bet', 'amount': amount});
     }
-    _betController.clear();
   }
+
+  // void _bet() {
+  //   final amount = int.tryParse(_betController.text) ?? 0;
+  //   final currentPlayer = players[currentTurn];
+  //   if (amount < 1 || amount > (chips[currentPlayer] ?? 0)) return;
+
+  //   if (widget.isHost) {
+  //     chips[currentPlayer] = (chips[currentPlayer] ?? 0) - amount;
+  //     pot += amount;
+  //     currentTurn = (currentTurn + 1) % players.length;
+  //     setState(() {});
+  //     widget.hostServer!.broadcast({
+  //       'type': 'state_update',
+  //       'chips': chips,
+  //       'pot': pot,
+  //       'currentTurn': currentTurn,
+  //     });
+  //     _messages.add('You bet $amount');
+  //   } else if (currentPlayer == myUsername) {
+  //     widget.wsClient!.send({'type': 'bet', 'amount': amount});
+  //   }
+  //   _betController.clear();
+  // }
 
   void _sendChat() {
     final text = _chatController.text.trim();
@@ -136,24 +175,83 @@ class _GameScreenState extends State<GameScreen> {
         'pot': pot,
         'currentTurn': currentTurn,
       });
-      _messages.add('You checked');
+      widget.hostServer!.broadcast({
+        'type': 'chat',
+        'from': 'System',
+        'text': '$myUsername checked',
+      });
     } else {
       widget.wsClient!.send({'type': 'check'});
     }
   }
 
-  bool get isMyTurn => players.indexOf(myUsername) == currentTurn;
+  void _endGame() {
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        String selectedWinner = players[0];
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('End Game'),
+            content: DropdownButtonFormField<String>(
+              initialValue: selectedWinner,
+              items: players
+                  .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) {
+                  setDialogState(() => selectedWinner = v);
+                }
+              },
+              decoration: const InputDecoration(labelText: 'Select Winner'),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, selectedWinner),
+                child: const Text('End'),
+              ),
+            ],
+          ),
+        );
+      },
+    ).then((winner) {
+      if (winner != null && widget.isHost) {
+        widget.hostServer!.broadcast({'type': 'game_end', 'winner': winner});
+        setState(() {
+          _messages.add('Game ended. Winner: $winner');
+          currentTurn = -1;
+        });
+      }
+    });
+  }
+
+  bool get isMyTurn =>
+      currentTurn >= 0 && players.indexOf(myUsername) == currentTurn;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Casino Chips')),
+      appBar: AppBar(
+        title: const Text('Casino Chips'),
+        actions: widget.isHost
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.stop),
+                  onPressed: currentTurn >= 0 ? _endGame : null,
+                ),
+              ]
+            : null,
+      ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 36),
             child: Text(
-              'Pot: $pot',
+              currentTurn >= 0 ? 'Pot: $pot' : 'Game Over - Pot: $pot',
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ),
@@ -187,19 +285,22 @@ class _GameScreenState extends State<GameScreen> {
           if (isMyTurn)
             Padding(
               padding: const EdgeInsets.all(8),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _betController,
-                      decoration: const InputDecoration(
-                        labelText: 'Bet amount',
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
+                  Wrap(
+                    spacing: 8,
+                    children: [1, 5, 10, 25, 50, 100, 500, 1000]
+                        .map(
+                          (val) => ElevatedButton(
+                            onPressed: (chips[players[currentTurn]] ?? 0) >= val
+                                ? () => _betAmount(val)
+                                : null,
+                            child: Text('$val'),
+                          ),
+                        )
+                        .toList(),
                   ),
                   ElevatedButton(onPressed: _check, child: const Text('Check')),
-                  ElevatedButton(onPressed: _bet, child: const Text('Bet')),
                 ],
               ),
             ),

@@ -39,6 +39,8 @@ class _CreateLobbyScreenState extends State<CreateLobbyScreen> {
       onPlayersUpdate: (p) {
         if (mounted) setState(() => _players = p);
       },
+      onChatMessage: (msg) => debugPrint('Chat: $msg'),
+      onCustomMessage: (data, socket) => debugPrint('Custom: $data'),
     );
     final ip = await getLocalIp();
     setState(() => _ip = ip);
@@ -117,7 +119,7 @@ class _CreateLobbyScreenState extends State<CreateLobbyScreen> {
                     ),
                     const SizedBox(height: 8),
 
-                    // ✅ FIXED: No Expanded! Just render list with natural height
+                    // Just render list with natural height
                     if (_players.length == 1)
                       const Center(
                         child: Padding(
@@ -148,12 +150,10 @@ class _CreateLobbyScreenState extends State<CreateLobbyScreen> {
                                 fontWeight: i == 0 ? FontWeight.bold : null,
                               ),
                             ),
-                            trailing: i == 0
-                                ? null
-                                : const Icon(Icons.drag_handle),
+                            trailing: const Icon(Icons.drag_handle),
                           ),
                           onReorder: (old, anew) {
-                            if (old == 0 || anew == 0) return;
+                            if (fixedDealer && (old == 0 || anew == 0)) return;
                             setState(() {
                               if (old < anew) anew--;
                               final p = _players.removeAt(old);
@@ -164,22 +164,22 @@ class _CreateLobbyScreenState extends State<CreateLobbyScreen> {
                       ),
 
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Text('Starting Chips: '),
-                        DropdownButton<int>(
-                          value: selectedCoins,
-                          items: [500, 1000, 2000, 5000]
-                              .map(
-                                (v) => DropdownMenuItem(
-                                  value: v,
-                                  child: Text('$v'),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (v) => setState(() => selectedCoins = v!),
-                        ),
-                      ],
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Starting Chips (rounds to nearest 5)',
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        int? v = int.tryParse(value);
+                        if (v != null) {
+                          setState(
+                            () => selectedCoins = ((v / 5).round() * 5).clamp(
+                              5,
+                              10000,
+                            ),
+                          );
+                        }
+                      },
                     ),
                     CheckboxListTile(
                       title: const Text('Host is Fixed Dealer'),
